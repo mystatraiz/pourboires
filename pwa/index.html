@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Calculateur de pourboires – PWA</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4f8cff">
+  <link rel="icon" href="icon-192.png">
+  <style>
+    html,body{height:100%}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;background:#f7f8fa;color:#22223b;min-height:100vh;}
+    .wrap{max-width:700px;margin:40px auto;padding:0 20px;}
+    /* ... You can copy your modernized CSS here ... */
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M12 2c5.523 0 10 4.477 10 10 0 3.473-1.787 6.53-4.484 8.313l-.016.011a1 1 0 0 1-.558.176H7.058a1 1 0 0 1-.558-.176l-.016-.011C3.787 18.53 2 15.473 2 12 2 6.477 6.477 2 12 2Zm0 2a8 8 0 0 0-8 8c0 2.64 1.279 4.977 3.242 6.422L7 13a1 1 0 0 1 1-1h2V8a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4h2a1 1 0 0 1 1 1l-.242 5.422A7.96 7.96 0 0 0 20 12a8 8 0 0 0-8-8Z" fill="currentColor"/>
+      </svg>
+      <h1>Calculateur local de pourboires</h1>
+    </header>
+
+    <section class="card">
+      <div class="controls">
+        <div class="field half">
+          <label for="total">Montant total à répartir (€) – <span class="hint">entier, sans virgule</span></label>
+          <input id="total" type="number" min="0" step="1" value="0" />
+        </div>
+        <div class="field half">
+          <label for="rounding">Méthode d'arrondi</label>
+          <select id="rounding">
+            <option value="floor">Au plus bas (Hamilton)</option>
+            <option value="nearest">Au plus proche</option>
+          </select>
+        </div>
+        <div class="field">
+          <span class="hint">Pondération = <strong>points × jours</strong>. Les montants finaux sont des <strong>euros entiers</strong>. Vous pouvez saisir un <strong>Montant fixe</strong> : il est attribué tel quel et soustrait du total avant la répartition.</span>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <button class="btn primary" id="addRow">+ Ajouter un serveur</button>
+        <button class="btn" id="resetDefaults">Réinitialiser (équipe type)</button>
+        <button class="btn" id="save">💾 Sauvegarder</button>
+        <button class="btn" id="load">📥 Recharger</button>
+        
+        
+        <span class="hint">Astuce : tout calcule en direct dès que vous modifiez une valeur.</span>
+      </div>
+
+      <div style="padding:8px 12px 16px">
+        <table id="tbl">
+          <thead>
+            <tr>
+              <th>Nom</th>
+              <th class="center">Points</th>
+              <th class="center">Jours</th>
+              <th class="right">Pondération</th>
+              <th class="right">Fixe (€)</th>
+              <th class="right">Montant (€)</th>
+              <th class="center">×</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="footer">
+        <div class="sum">
+          <div>Total pondération : <span class="num" id="sumW">0</span></div>
+          <div>Somme distribuée : <span class="num" id="sum€">0</span> €</div>
+          <div>Reste à distribuer : <span class="num chip" id="rest">0</span> €</div>
+        </div>
+        <div class="hint">Méthode : proportionnel + reste par plus grands reliquats (Hamilton) ou arrondi au plus proche. Les montants fixes s'ajoutent à la part proportionnelle.</div>
+      </div>
+    </section>
+
+    <p class="hint" style="margin-top:10px">⚠️ Tout se passe en local dans votre navigateur (aucun envoi serveur). Les données sauvegardées vont dans le stockage local du navigateur.</p>
+  </div>
+
+  <template id="rowTpl">
+    <tr>
+      <td data-label="Nom"><input type="text" class="name" placeholder="Nom" /></td>
+      <td class="center" data-label="Points"><input type="number" class="points" min="0" step="1" value="0" /></td>
+      <td class="center" data-label="Jours"><input type="number" class="days" min="0" step="1" value="0" /></td>
+      <td class="right num" data-label="Pondération"><span class="weight">0</span></td>
+      <td class="right" data-label="Fixe (€)"><input type="number" class="fixed" min="0" step="1" value="0" /></td>
+      <td class="right num" data-label="Montant (€)"><span class="amount">0</span></td>
+      <td class="center"><button class="btn warn" title="Supprimer">Suppr</button></td>
+    </tr>
+  </template>
+
+  <script>
+    const DEFAULT_TEAM = [
+      {name:'Alexandre', points:10, days:1, fixed:0},
+      {name:'Elodie', points:8, days:1, fixed:0},
+      {name:'Nadine', points:6, days:1, fixed:0},
+      {name:'Samuel', points:6, days:1, fixed:0},
+      {name:'Julien', points:5, days:1, fixed:0},
+      {name:'Ekaterina', points:4, days:1, fixed:0},
+      {name:'Jacques', points:4, days:1, fixed:0},
+      {name:'Aziz', points:3, days:1, fixed:0},
+    ];
+
+    const $ = sel => document.querySelector(sel);
+    const $$ = sel => document.querySelectorAll(sel);
+
+    const tblBody = $('#tbl tbody');
+    const rowTpl = $('#rowTpl');
+
+    function addRow(data={name:'', points:0, days:0, fixed:0}){
+      const node = rowTpl.content.firstElementChild.cloneNode(true);
+      const name = node.querySelector('.name');
+      const points = node.querySelector('.points');
+      const days = node.querySelector('.days');
+      const fixed = node.querySelector('.fixed');
+      const weight = node.querySelector('.weight');
+      const amount = node.querySelector('.amount');
+      const del = node.querySelector('button');
+
+      name.value = data.name || '';
+      points.value = data.points ?? 0;
+      days.value = data.days ?? 0;
+      fixed.value = data.fixed ?? 0;
+
+      function update(){
+        const w = (parseInt(points.value||'0',10) * parseInt(days.value||'0',10));
+        weight.textContent = w;
+        compute();
+      }
+
+      ;[name, points, days, fixed].forEach(inp => inp.addEventListener('input', update));
+      del.addEventListener('click', () => { node.remove(); compute(); });
+
+      tblBody.appendChild(node);
+      update();
+    }
+
+    function getRows(){
+      return Array.from(tblBody.querySelectorAll('tr')).map(tr => ({
+        name: tr.querySelector('.name').value.trim() || '—',
+        points: parseInt(tr.querySelector('.points').value||'0',10),
+        days: parseInt(tr.querySelector('.days').value||'0',10),
+        fixed: parseInt(tr.querySelector('.fixed').value||'0',10),
+        el: tr,
+      }));
+    }
+
+    function compute(){
+      const total = parseInt($('#total').value||'0',10);
+      const rounding = $('#rounding').value;
+      const rows = getRows();
+
+      const weights = rows.map(r => Math.max(0, r.points * r.days));
+      const sumW = weights.reduce((a,b)=>a+b,0);
+      $('#sumW').textContent = sumW;
+
+      const fixeds = rows.map(r => Math.max(0, r.fixed|0));
+      const totalFixed = fixeds.reduce((a,b)=>a+b,0);
+
+      let distributed = 0;
+
+      if(sumW === 0){
+        // pas de pondération : on ne répartit que les montants fixes
+        rows.forEach((r,i) => {
+          r.el.querySelector('.weight').textContent = r.points * r.days;
+          r.el.querySelector('.amount').textContent = fixeds[i];
+          distributed += fixeds[i];
+        });
+        $('#sum€').textContent = distributed;
+        $('#rest').textContent = Math.max(0, total - distributed);
+        return;
+      }
+
+      const remaining = Math.max(0, total - totalFixed);
+      const rawShares = rows.map((r,i) => remaining * (weights[i] / sumW));
+
+      let propAmounts = [];
+      if (rounding === 'nearest'){
+        propAmounts = rawShares.map(v => Math.round(v));
+        let delta = remaining - propAmounts.reduce((a,b)=>a+b,0);
+        if(delta !== 0){
+          const order = rawShares.map((v,i)=>({i, frac:v - Math.round(v)}))
+                                 .sort((a,b)=> (delta>0) ? (b.frac - a.frac) : (a.frac - b.frac));
+          for(let k=0; delta!==0 && k<order.length; k++){
+            propAmounts[order[k].i] += (delta>0?1:-1);
+            delta += (delta>0?-1:1);
+          }
+        }
+      } else {
+        const floors = rawShares.map(v => Math.floor(v));
+        const used = floors.reduce((a,b)=>a+b,0);
+        let rest = remaining - used;
+        const order = rawShares.map((v,i)=>({i, frac: v - Math.floor(v)})).sort((a,b)=> b.frac - a.frac);
+        propAmounts = floors.slice();
+        for(let k=0; k<order.length && rest>0; k++){
+          propAmounts[order[k].i] += 1;
+          rest -= 1;
+        }
+      }
+
+      rows.forEach((r,i)=>{
+        const finalAmt = (propAmounts[i]|0) + (fixeds[i]|0);
+        r.el.querySelector('.amount').textContent = finalAmt;
+        r.el.querySelector('.weight').textContent = weights[i];
+        distributed += finalAmt;
+      });
+
+      $('#sum€').textContent = distributed;
+      $('#rest').textContent = Math.max(0, total - distributed);
+
+      autoSave();
+    }
+
+    function exportCSV(){
+      const rows = getRows();
+      const total = parseInt($('#total').value||'0',10);
+      const data = [['Nom','Points','Jours','Pondération','Fixe (€)','Montant (€)']];
+      const totalFixed = rows.reduce((s,r)=> s + Math.max(0, r.fixed|0), 0);
+      const totalDistribue = parseInt($('#sum€').textContent||'0',10);
+
+      rows.forEach(r=>{
+        data.push([
+          r.name,
+          r.points,
+          r.days,
+          (r.points*r.days),
+          r.fixed,
+          r.el.querySelector('.amount').textContent
+        ]);
+      });
+      data.push([]);
+      data.push(['Somme montants fixes', '', '', '', '', totalFixed]);
+      data.push(['Total réparti sur pondération', '', '', '', '', (totalDistribue - totalFixed)]);
+      data.push(['Total distribué', '', '', '', '', totalDistribue]);
+      data.push(['Total initial', '', '', '', '', total]);
+
+]/.test(s) ? '"'+ s.replace(/"/g,'""') +'"' : s;
+      const csv = data.map(row => row.map(cell => {
+        const s = String(cell ?? ''); return /[";,\n]/.test(s) ? '"'+ s.replace(/"/g,'""') +'"' : s;
+      }).join(';')).join('\n');
+
+      const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'repartition_pourboires.csv'; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function autoSave(){
+      const payload = {
+        total: parseInt($('#total').value||'0',10),
+        rounding: $('#rounding').value,
+        rows: getRows().map(r=>({name:r.name, points:r.points, days:r.days, fixed:r.fixed}))
+      };
+      try{ localStorage.setItem('tips-tool-v2-fixed', JSON.stringify(payload)); }catch(e){}
+    }
+
+    function saveManual(){ autoSave(); alert('Données sauvegardées dans ce navigateur.'); }
+
+    function loadFromStorage(){
+      try{
+        const raw = localStorage.getItem('tips-tool-v2-fixed');
+        if(!raw){ alert('Aucune sauvegarde trouvée.'); return; }
+        const payload = JSON.parse(raw);
+        $('#total').value = payload.total ?? 0;
+        $('#rounding').value = payload.rounding || 'floor';
+        tblBody.innerHTML = '';
+        (payload.rows||[]).forEach(addRow);
+        compute();
+      }catch(e){ alert('Impossible de charger la sauvegarde.'); }
+    }
+
+    function resetDefaults(){
+      $('#total').value = 0;
+      $('#rounding').value = 'floor';
+      tblBody.innerHTML = '';
+      DEFAULT_TEAM.forEach(addRow);
+      compute();
+    }
+
+    // Events
+    $('#addRow').addEventListener('click', ()=> addRow());
+    $('#resetDefaults').addEventListener('click', resetDefaults);
+    
+    
+    $('#save').addEventListener('click', saveManual);
+    $('#load').addEventListener('click', loadFromStorage);
+    $('#total').addEventListener('input', compute);
+    $('#rounding').addEventListener('change', compute);
+
+    // Init
+    resetDefaults();
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('service-worker.js');
+      });
+    }
+  </script>
+</body>
+</html>
