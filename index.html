@@ -1,362 +1,906 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="UTF-8" />
+  <title>Courses Metro</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Calculateur de pourboires – Local (avec montants fixes)</title>
   <style>
-    :root{
-      --bg:#0b1522;         /* sobre, lisible en club/bar */
-      --panel:#13293d;
-      --accent:#EBC670;     /* or doux */
-      --accent-2:#BA914A;   /* or foncé */
-      --muted:#446B88;      /* bleu doux */
-      --text:#ECDEAD;
-      --ok:#15a34a;
-      --warn:#ef4444;
-      --shadow:0 8px 24px rgba(0,0,0,.24);
-      --radius:16px;
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Inter,Arial,sans-serif;
-      background:linear-gradient(180deg,#081420,#13314D 70%);
-      color:var(--text);
+
+    body {
+      margin: 0;
+      padding: 12px;
+      background: #0f172a;
+      color: #f9fafb;
     }
-    .wrap{max-width:1100px; margin:32px auto; padding:0 16px}
-    header{display:flex; gap:16px; align-items:center; margin-bottom:16px}
-    header h1{font-size:clamp(20px,3.2vw,28px); margin:0; letter-spacing:.3px}
-    .card{background:var(--panel); border:1px solid rgba(255,255,255,.06); border-radius:var(--radius); box-shadow:var(--shadow)}
-    .controls{display:grid; grid-template-columns:repeat(12,1fr); gap:12px; padding:16px}
-    .controls .field{grid-column:span 12}
-    .controls .field.half{grid-column:span 6}
-    label{font-size:12px; opacity:.9; display:block; margin-bottom:6px}
-    input[type="number"], input[type="text"], select{
-      width:100%; padding:12px 12px; border-radius:12px; border:1px solid var(--muted);
-      background:#0e2033; color:var(--text); outline:none; font-size:14px;
+
+    .app {
+      max-width: 480px;
+      margin: 0 auto;
     }
-    input[type="number"]::-webkit-outer-spin-button,
-    input[type="number"]::-webkit-inner-spin-button{ -webkit-appearance: none; margin: 0; }
-    .btn{appearance:none; border:1px solid var(--muted); color:var(--text); background:linear-gradient(180deg,var(--muted),#1A2D3D); padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:600; letter-spacing:.2px}
-    .btn:hover{filter:brightness(1.05)}
-    .btn:active{transform:translateY(1px)}
-    .btn.primary{border-color:var(--accent-2); background:linear-gradient(180deg,var(--accent),var(--accent-2)); color:#1a1200}
-    .btn.ghost{background:transparent}
-    .btn.warn{border-color:rgba(239,68,68,.6)}
 
-    .toolbar{display:flex; flex-wrap:wrap; gap:8px; padding:12px 16px; border-top:1px solid rgba(255,255,255,.06)}
+    h1 {
+      font-size: 1.6rem;
+      margin: 0 0 0.25rem;
+    }
 
-    table{width:100%; border-collapse:separate; border-spacing:0 8px; font-size:14px}
-    thead th{font-weight:700; text-align:left; font-size:12px; text-transform:uppercase; letter-spacing:.4px; opacity:.9; padding:6px 10px}
-    tbody tr{background:#0f2236; border:1px solid rgba(255,255,255,.06)}
-    tbody td{padding:8px 10px; vertical-align:middle}
-    tbody tr{border-radius:12px; overflow:hidden}
-    tbody tr td:first-child{border-top-left-radius:12px; border-bottom-left-radius:12px}
-    tbody tr td:last-child{border-top-right-radius:12px; border-bottom-right-radius:12px}
+    p {
+      margin: 0.25rem 0;
+      font-size: 0.9rem;
+      color: #cbd5f5;
+    }
 
-    .num{font-variant-numeric:tabular-nums}
-    .right{text-align:right}
-    .center{text-align:center}
-    .chip{display:inline-block; padding:2px 8px; border-radius:999px; background:rgba(235,198,112,.1); border:1px solid rgba(235,198,112,.25); color:var(--accent)}
+    .card {
+      background: #020617;
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: 0 10px 25px rgba(15,23,42,0.7);
+      margin: 10px 0;
+      border: 1px solid #1e293b;
+    }
 
-    .footer{display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between; padding:12px 16px; border-top:1px solid rgba(255,255,255,.06)}
-    .sum{display:flex; gap:16px; align-items:center; flex-wrap:wrap}
-    .sum div{background:#0e2033; border:1px solid rgba(255,255,255,.06); padding:8px 12px; border-radius:12px}
+    label {
+      font-size: 0.8rem;
+      color: #9ca3af;
+      display: block;
+      margin-bottom: 4px;
+    }
 
-    .hint{opacity:.8; font-size:12px}
+    input[type="text"],
+    input[type="number"],
+    select {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid #1e293b;
+      background: #020617;
+      color: #f9fafb;
+      font-size: 0.9rem;
+    }
 
-    @media (max-width:780px){
-      .controls{grid-template-columns:repeat(6,1fr)}
-      .controls .field.half{grid-column:span 6}
-      thead{display:none}
-      tbody tr{display:grid; grid-template-columns:1.2fr .7fr .7fr .8fr .8fr .9fr .4fr; align-items:center}
-      tbody td[data-label]{display:grid; gap:4px}
-      tbody td[data-label]::before{content:attr(data-label); font-size:11px; opacity:.7}
+    input[type="text"]::placeholder {
+      color: #64748b;
+    }
+
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 9px 14px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-primary {
+      background: #2563eb;
+      color: white;
+    }
+
+    .btn-secondary {
+      background: #1e293b;
+      color: #e5e7eb;
+    }
+
+    .btn-danger {
+      background: #b91c1c;
+      color: white;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid #475569;
+      color: #e5e7eb;
+    }
+
+    .btn-full {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .col {
+      flex: 1 1 100%;
+    }
+
+    .col-2 {
+      flex: 1 1 calc(50% - 4px);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+
+    .products-list {
+      max-height: 260px;
+      overflow-y: auto;
+      margin-top: 6px;
+      border-radius: 12px;
+      border: 1px solid #1e293b;
+    }
+
+    .product-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      border-bottom: 1px solid #111827;
+      font-size: 0.85rem;
+    }
+
+    .product-row:last-child {
+      border-bottom: none;
+    }
+
+    .product-main {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .product-name {
+      font-weight: 500;
+    }
+
+    .product-meta {
+      font-size: 0.75rem;
+      color: #9ca3af;
+    }
+
+    .product-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: flex-end;
+    }
+
+    .btn-small {
+      padding: 4px 8px;
+      font-size: 0.75rem;
+    }
+
+    /* SWIPE OVERLAY */
+    .swipe-overlay {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at top, #1d283a, #020617 60%);
+      display: none;
+      z-index: 50;
+      padding: 12px;
+    }
+
+    .swipe-inner {
+      max-width: 480px;
+      margin: 0 auto;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .swipe-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #cbd5f5;
+      font-size: 0.85rem;
+    }
+
+    .swipe-card {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 16px;
+      border-radius: 18px;
+      background: linear-gradient(145deg, #020617, #111827);
+      border: 1px solid #1d4ed8;
+      box-shadow: 0 18px 40px rgba(15,23,42,0.9);
+      touch-action: pan-y;
+    }
+
+    .swipe-top {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+      text-align: center;
+    }
+
+    .swipe-rayon {
+      font-size: 1.1rem;
+      color: #93c5fd;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .swipe-stock {
+      font-size: 0.8rem;
+      color: #cbd5f5;
+    }
+
+    .swipe-name {
+      font-size: 1.4rem;
+      font-weight: 700;
+    }
+
+    .qty-control {
+      margin-top: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0;
+      border-radius: 999px;
+      border: 1px solid #1e40af;
+      overflow: hidden;
+      background: #020617;
+    }
+
+    .qty-btn {
+      width: 42px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      background: transparent;
+      color: #e5e7eb;
+      font-size: 1.1rem;
+    }
+
+    .qty-value {
+      min-width: 50px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+
+    .swipe-hints {
+      font-size: 0.75rem;
+      color: #9ca3af;
+      margin-top: 6px;
+      text-align: center;
+    }
+
+    .swipe-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn-swipe-add {
+      flex: 1;
+      background: #16a34a;
+      color: white;
+      font-size: 1rem;
+      padding-block: 10px;
+    }
+
+    .btn-swipe-skip {
+      flex: 1;
+      background: #1e293b;
+      color: #e5e7eb;
+      font-size: 1rem;
+      padding-block: 10px;
+    }
+
+    .swipe-progress {
+      font-size: 0.8rem;
+      color: #9ca3af;
+      text-align: center;
+      margin-top: 4px;
+    }
+
+    /* RESULT LIST */
+    .result-list {
+      margin-top: 6px;
+      border-radius: 12px;
+      border: 1px solid #1e293b;
+    }
+
+    .rayon-title {
+      padding: 6px 10px;
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #93c5fd;
+      border-bottom: 1px solid #0f172a;
+      background: #020617;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 10px;
+      border-bottom: 1px solid #020617;
+      font-size: 0.9rem;
+    }
+
+    .result-row:last-child {
+      border-bottom: none;
+    }
+
+    .result-name {
+      font-weight: 500;
+    }
+
+    .result-qty {
+      font-weight: 600;
+      color: #e5e7eb;
+    }
+
+    .print-only-title {
+      display: none;
+    }
+
+    #printListContainer {
+      display: none;
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 8px;
+      }
+
+      .card {
+        padding: 12px;
+      }
+    }
+
+    @media print {
+      body {
+        background: white;
+        color: black;
+        padding: 16px;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-only-title {
+        display: block !important;
+        font-size: 1.3rem;
+        margin-bottom: 8px;
+      }
+      #printListContainer {
+        display: block;
+      }
+      .result-list {
+        border-color: #000;
+      }
+      .rayon-title {
+        background: #f3f4f6;
+        color: #111827;
+        border-color: #000;
+      }
+      .result-row {
+        border-color: #e5e7eb;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M12 2c5.523 0 10 4.477 10 10 0 3.473-1.787 6.53-4.484 8.313l-.016.011a1 1 0 0 1-.558.176H7.058a1 1 0 0 1-.558-.176l-.016-.011C3.787 18.53 2 15.473 2 12 2 6.477 6.477 2 12 2Zm0 2a8 8 0 0 0-8 8c0 2.64 1.279 4.977 3.242 6.422L7 13a1 1 0 0 1 1-1h2V8a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4h2a1 1 0 0 1 1 1l-.242 5.422A7.96 7.96 0 0 0 20 12a8 8 0 0 0-8-8Z" fill="currentColor"/>
-      </svg>
-      <h1>Calculateur local de pourboires</h1>
-    </header>
+  <div class="app no-print">
+    <!-- PAGE ACCUEIL : COURSES METRO -->
+    <div id="pageHome">
+      <h1>🛒 Courses Metro</h1>
+      <p>Crée ta liste en swipant tes produits dans l’ordre des rayons Metro.</p>
 
-    <section class="card">
-      <div class="controls">
-        <div class="field half">
-          <label for="total">Montant total à répartir (€) – <span class="hint">entier, sans virgule</span></label>
-          <input id="total" type="number" min="0" step="1" value="0" />
+      <!-- Création de liste par swipe -->
+      <div class="card">
+        <h2 style="font-size:1.1rem;margin:0 0 8px;">Créer une liste (mode swipe)</h2>
+        <p>
+          Les produits seront proposés <strong>dans l’ordre des zones de stockage</strong> :
+          chambre froide → piece a viande → produits d'entretien → caveau → garage.<br/>
+          À l’intérieur de chaque zone : tri par rayon Metro, puis par nom.<br/>
+          Swipe <strong>gauche = ajouter</strong>, swipe <strong>droite = passer</strong>.
+        </p>
+
+        <div class="header-actions">
+          <button id="startSession" class="btn-primary btn-full">
+            🚀 Démarrer la liste (mode swipe)
+          </button>
         </div>
-        <div class="field half">
-          <label for="rounding">Méthode d'arrondi</label>
-          <select id="rounding">
-            <option value="floor">Au plus bas (Hamilton)</option>
-            <option value="nearest">Au plus proche</option>
-          </select>
-        </div>
-        <div class="field">
-          <span class="hint">Pondération = <strong>points × jours</strong>. Les montants finaux sont des <strong>euros entiers</strong>. Vous pouvez saisir un <strong>Montant fixe</strong> : il est attribué tel quel et soustrait du total avant la répartition.</span>
+
+        <div id="sessionSummary" style="margin-top:10px;display:none;">
+          <p style="font-size:0.85rem;color:#9ca3af;margin-bottom:6px;">
+            Dernière liste créée :
+          </p>
+          <div id="resultList" class="result-list"></div>
+          <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+            <button id="printList" class="btn-secondary btn-full">🖨 Imprimer / PDF</button>
+          </div>
         </div>
       </div>
 
-      <div class="toolbar">
-        <button class="btn primary" id="addRow">+ Ajouter un serveur</button>
-        <button class="btn" id="resetDefaults">Réinitialiser (équipe type)</button>
-        <button class="btn" id="save">💾 Sauvegarder</button>
-        <button class="btn" id="load">📥 Recharger</button>
-        
-        
-        <span class="hint">Astuce : tout calcule en direct dès que vous modifiez une valeur.</span>
+      <button id="goProducts" class="btn-secondary btn-full" style="margin-top:8px;">
+        📦 Gérer mes produits
+      </button>
+    </div>
+
+    <!-- PAGE PRODUITS -->
+    <div id="pageProducts" style="display:none;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <button id="backHome" class="btn-outline btn-small">← Retour</button>
+        <span style="font-size:1.1rem;font-weight:600;">Mes produits</span>
       </div>
 
-      <div style="padding:8px 12px 16px">
-        <table id="tbl">
-          <thead>
-            <tr>
-              <th>Nom</th>
-              <th class="center">Points</th>
-              <th class="center">Jours</th>
-              <th class="right">Pondération</th>
-              <th class="right">Fixe (€)</th>
-              <th class="right">Montant (€)</th>
-              <th class="center">×</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
+      <div class="card">
+        <form id="productForm">
+          <div class="row">
+            <div class="col">
+              <label for="prodName">Produit</label>
+              <input id="prodName" type="text" placeholder="Ex : salade, steak haché..." required />
+            </div>
+          </div>
+          <div class="row" style="margin-top:6px;">
+            <div class="col-2">
+              <label for="prodRayon">Rayon magasin</label>
+              <select id="prodRayon">
+                <option value="fruits et legumes">fruits et legumes</option>
+                <option value="frais">frais</option>
+                <option value="surgeles">surgeles</option>
+                <option value="sec">sec</option>
+                <option value="alcool">alcool</option>
+                <option value="softs">softs</option>
+                <option value="hygiene">hygiene</option>
+                <option value="materiel">materiel</option>
+              </select>
+            </div>
+            <div class="col-2">
+              <label for="prodQty">Qté par défaut</label>
+              <input id="prodQty" type="number" min="1" value="1" />
+            </div>
+          </div>
+          <div class="row" style="margin-top:6px;">
+            <div class="col">
+              <label for="prodStock">Stockage au restaurant</label>
+              <select id="prodStock">
+                <option value="chambre froide">chambre froide</option>
+                <option value="piece a viande">piece a viande</option>
+                <option value="produits d'entretien">produits d'entretien</option>
+                <option value="caveau">caveau</option>
+                <option value="garage">garage</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-top:10px;">
+            <button type="submit" class="btn-primary btn-full">
+              + Ajouter / mettre à jour
+            </button>
+          </div>
+        </form>
 
-      <div class="footer">
-        <div class="sum">
-          <div>Total pondération : <span class="num" id="sumW">0</span></div>
-          <div>Somme distribuée : <span class="num" id="sum€">0</span> €</div>
-          <div>Reste à distribuer : <span class="num chip" id="rest">0</span> €</div>
+        <div style="margin-top:10px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:0.85rem;color:#9ca3af;">Produits enregistrés</span>
+            <button id="resetProducts" class="btn-outline btn-small">Tout effacer</button>
+          </div>
+          <div id="productsList" class="products-list"></div>
         </div>
-        <div class="hint">Méthode : proportionnel + reste par plus grands reliquats (Hamilton) ou arrondi au plus proche. Les montants fixes s'ajoutent à la part proportionnelle.</div>
       </div>
-    </section>
-
-    <p class="hint" style="margin-top:10px">⚠️ Tout se passe en local dans votre navigateur (aucun envoi serveur). Les données sauvegardées vont dans le stockage local du navigateur.</p>
+    </div>
   </div>
 
-  <template id="rowTpl">
-    <tr>
-      <td data-label="Nom"><input type="text" class="name" placeholder="Nom" /></td>
-      <td class="center" data-label="Points"><input type="number" class="points" min="0" step="1" value="0" /></td>
-      <td class="center" data-label="Jours"><input type="number" class="days" min="0" step="1" value="0" /></td>
-      <td class="right num" data-label="Pondération"><span class="weight">0</span></td>
-      <td class="right" data-label="Fixe (€)"><input type="number" class="fixed" min="0" step="1" value="0" /></td>
-      <td class="right num" data-label="Montant (€)"><span class="amount">0</span></td>
-      <td class="center"><button class="btn warn" title="Supprimer">Suppr</button></td>
-    </tr>
-  </template>
+  <!-- Contenu imprimé -->
+  <div class="print-only-title">Courses Metro - Liste</div>
+  <div id="printListContainer" class="result-list"></div>
 
-  <script>
-    const DEFAULT_TEAM = [
-      {name:'Alexandre', points:10, days:5, fixed:0},
-      {name:'Elodie', points:10, days:3, fixed:0},
-      {name:'Nadine', points:10, days:4, fixed:0},
-      {name:'Samuel', points:10, days:5, fixed:0},
-      {name:'Julien', points:10, days:5, fixed:0},
-      {name:'Ekaterina', points:10, days:5, fixed:0},
-      {name:'Jacques', points:6, days:5, fixed:0},
-      {name:'Cyril', points:6, days:5, fixed:0},
-      {name:'Aziz', points:0, days:5, fixed:50},
-    ];
+  <!-- Swipe overlay -->
+  <div id="swipeOverlay" class="swipe-overlay">
+    <div class="swipe-inner">
+      <div class="swipe-header">
+        <span>Choisir les articles</span>
+        <button id="closeSwipe" class="btn-outline btn-small">Terminer</button>
+      </div>
 
-    const $ = sel => document.querySelector(sel);
-    const $$ = sel => document.querySelectorAll(sel);
+      <div id="swipeCard" class="swipe-card">
+        <div class="swipe-top">
+          <div id="swipeRayon" class="swipe-rayon"></div>
+          <div id="swipeStock" class="swipe-stock"></div>
+          <div id="swipeName" class="swipe-name"></div>
 
-    const tblBody = $('#tbl tbody');
-    const rowTpl = $('#rowTpl');
+          <div class="qty-control">
+            <button id="btnQtyMinus" class="qty-btn">−</button>
+            <div id="qtyValue" class="qty-value">1</div>
+            <button id="btnQtyPlus" class="qty-btn">+</button>
+          </div>
 
-    function addRow(data={name:'', points:0, days:0, fixed:0}){
-      const node = rowTpl.content.firstElementChild.cloneNode(true);
-      const name = node.querySelector('.name');
-      const points = node.querySelector('.points');
-      const days = node.querySelector('.days');
-      const fixed = node.querySelector('.fixed');
-      const weight = node.querySelector('.weight');
-      const amount = node.querySelector('.amount');
-      const del = node.querySelector('button');
+          <div class="swipe-hints">
+            Swipe gauche = <strong>ajouter</strong> · Swipe droite = <strong>passer</strong><br/>
+            Ou utilise les boutons en bas.
+          </div>
+        </div>
 
-      name.value = data.name || '';
-      points.value = data.points ?? 0;
-      days.value = data.days ?? 0;
-      fixed.value = data.fixed ?? 0;
+        <div class="swipe-actions">
+          <button id="btnAdd" class="btn-swipe-add">⬅ Ajouter</button>
+          <button id="btnSkip" class="btn-swipe-skip">Passer ➡</button>
+        </div>
+        <div id="swipeProgress" class="swipe-progress"></div>
+      </div>
+    </div>
+  </div>
 
-      function update(){
-        const w = (parseInt(points.value||'0',10) * parseInt(days.value||'0',10));
-        weight.textContent = w;
-        compute();
-      }
+<script>
+/* NAVIGATION ENTRE HOME / PRODUITS */
+const pageHome = document.getElementById("pageHome");
+const pageProducts = document.getElementById("pageProducts");
+const goProducts = document.getElementById("goProducts");
+const backHome = document.getElementById("backHome");
 
-      ;[name, points, days, fixed].forEach(inp => inp.addEventListener('input', update));
-      del.addEventListener('click', () => { node.remove(); compute(); });
+goProducts.onclick = () => {
+  pageHome.style.display = "none";
+  pageProducts.style.display = "block";
+};
 
-      tblBody.appendChild(node);
-      update();
+backHome.onclick = () => {
+  pageProducts.style.display = "none";
+  pageHome.style.display = "block";
+};
+
+/* STORAGE */
+const STORAGE_KEY = "smartShoppingProducts.v2";
+
+function loadProducts() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+  } catch {
+    return [];
+  }
+}
+
+function saveProducts(arr) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+}
+
+let products = loadProducts();
+// pour les anciens enregistrements sans stockage, on met par défaut "garage"
+products = products.map(p => ({ ...p, stockage: p.stockage || "garage" }));
+
+const rayonOrder = [
+  "fruits et legumes",
+  "frais",
+  "surgeles",
+  "sec",
+  "alcool",
+  "softs",
+  "hygiene",
+  "materiel"
+];
+
+const stockageOrder = [
+  "chambre froide",
+  "piece a viande",
+  "produits d'entretien",
+  "caveau",
+  "garage"
+];
+
+const rayonIcons = {
+  "fruits et legumes": "🥕",
+  "frais": "🥛",
+  "surgeles": "❄️",
+  "sec": "📦",
+  "alcool": "🍷",
+  "softs": "🥤",
+  "hygiene": "🧼",
+  "materiel": "🧰"
+};
+
+function sortByRayonThenName(a, b) {
+  const A = rayonOrder.indexOf(a.rayon);
+  const B = rayonOrder.indexOf(b.rayon);
+  const ra = A === -1 ? 999 : A;
+  const rb = B === -1 ? 999 : B;
+  if (ra !== rb) return ra - rb;
+  return a.name.localeCompare(b.name, "fr", { sensitivity: "base" });
+}
+
+function sortByStockageThenRayonThenName(a, b) {
+  const ZA = stockageOrder.indexOf(a.stockage);
+  const ZB = stockageOrder.indexOf(b.stockage);
+  const za = ZA === -1 ? 999 : ZA;
+  const zb = ZB === -1 ? 999 : ZB;
+  if (za !== zb) return za - zb;
+  return sortByRayonThenName(a, b);
+}
+
+/* AFFICHAGE PRODUITS */
+const productsListEl = document.getElementById("productsList");
+
+function renderProducts() {
+  productsListEl.innerHTML = "";
+
+  if (products.length === 0) {
+    productsListEl.innerHTML = "<div style='padding:10px;color:#9ca3af;'>Aucun produit enregistré</div>";
+    return;
+  }
+
+  const sorted = [...products].sort(sortByRayonThenName);
+  let currentRayon = null;
+
+  for (const p of sorted) {
+    if (p.rayon !== currentRayon) {
+      currentRayon = p.rayon;
+      const rt = document.createElement("div");
+      rt.className = "rayon-title";
+      rt.textContent = (rayonIcons[currentRayon] || "") + " " + currentRayon;
+      productsListEl.appendChild(rt);
     }
 
-    function getRows(){
-      return Array.from(tblBody.querySelectorAll('tr')).map(tr => ({
-        name: tr.querySelector('.name').value.trim() || '—',
-        points: parseInt(tr.querySelector('.points').value||'0',10),
-        days: parseInt(tr.querySelector('.days').value||'0',10),
-        fixed: parseInt(tr.querySelector('.fixed').value||'0',10),
-        el: tr,
-      }));
+    const row = document.createElement("div");
+    row.className = "product-row";
+
+    const main = document.createElement("div");
+    main.className = "product-main";
+
+    const n = document.createElement("div");
+    n.className = "product-name";
+    n.textContent = p.name;
+
+    const meta = document.createElement("div");
+    meta.className = "product-meta";
+    meta.textContent = `Qté: ${p.defaultQty} · Rayon: ${p.rayon} · Stockage: ${p.stockage}`;
+
+    main.appendChild(n);
+    main.appendChild(meta);
+
+    const acts = document.createElement("div");
+    acts.className = "product-actions";
+
+    const fill = document.createElement("button");
+    fill.className = "btn-secondary btn-small";
+    fill.textContent = "Éditer";
+    fill.onclick = () => {
+      prodName.value = p.name;
+      prodRayon.value = p.rayon;
+      prodStock.value = p.stockage || "garage";
+      prodQty.value = p.defaultQty;
+    };
+
+    const del = document.createElement("button");
+    del.className = "btn-danger btn-small";
+    del.textContent = "Supprimer";
+    del.onclick = () => {
+      products = products.filter(x => x.id !== p.id);
+      saveProducts(products);
+      renderProducts();
+    };
+
+    acts.appendChild(fill);
+    acts.appendChild(del);
+
+    row.appendChild(main);
+    row.appendChild(acts);
+
+    productsListEl.appendChild(row);
+  }
+}
+
+renderProducts();
+
+/* AJOUT / MODIF PRODUIT */
+const prodName = document.getElementById("prodName");
+const prodRayon = document.getElementById("prodRayon");
+const prodQty = document.getElementById("prodQty");
+const prodStock = document.getElementById("prodStock");
+const productForm = document.getElementById("productForm");
+
+productForm.onsubmit = (e) => {
+  e.preventDefault();
+
+  const name = prodName.value.trim();
+  if (!name) return;
+
+  const rayon = prodRayon.value;
+  const stockage = prodStock.value;
+  const qty = parseInt(prodQty.value) || 1;
+
+  let existing = products.find(
+    p =>
+      p.name.toLowerCase() === name.toLowerCase() &&
+      p.rayon === rayon &&
+      p.stockage === stockage
+  );
+
+  if (existing) {
+    existing.defaultQty = qty;
+  } else {
+    products.push({
+      id: Date.now(),
+      name,
+      rayon,
+      stockage,
+      defaultQty: qty
+    });
+  }
+
+  saveProducts(products);
+  renderProducts();
+
+  prodName.value = "";
+  prodQty.value = "1";
+};
+
+/* wipe all */
+document.getElementById("resetProducts").onclick = () => {
+  products = [];
+  saveProducts(products);
+  renderProducts();
+};
+
+/* MODE SWIPE */
+let sessionProducts = [];
+let sessionIndex = 0;
+let currentList = [];
+let currentQty = 1;
+
+const swipeOverlay = document.getElementById("swipeOverlay");
+const swipeRayon = document.getElementById("swipeRayon");
+const swipeStock = document.getElementById("swipeStock");
+const swipeName = document.getElementById("swipeName");
+const swipeProgress = document.getElementById("swipeProgress");
+const qtyValue = document.getElementById("qtyValue");
+
+const startSessionBtn = document.getElementById("startSession");
+const closeSwipeBtn = document.getElementById("closeSwipe");
+
+startSessionBtn.onclick = () => {
+  if (products.length === 0) {
+    alert("Ajoute des produits d'abord.");
+    pageHome.style.display = "none";
+    pageProducts.style.display = "block";
+    return;
+  }
+
+  // Tri par stockage, puis rayon, puis nom
+  sessionProducts = [...products].sort(sortByStockageThenRayonThenName);
+  sessionIndex = 0;
+  currentList = [];
+  updateSwipeCard();
+  swipeOverlay.style.display = "block";
+};
+
+closeSwipeBtn.onclick = () => {
+  swipeOverlay.style.display = "none";
+  renderResultList();
+};
+
+function updateSwipeCard() {
+  if (sessionIndex >= sessionProducts.length) {
+    swipeOverlay.style.display = "none";
+    renderResultList();
+    return;
+  }
+
+  const p = sessionProducts[sessionIndex];
+  swipeRayon.textContent = (rayonIcons[p.rayon] || "") + " " + p.rayon;
+  swipeStock.textContent = p.stockage;
+  swipeName.textContent = p.name;
+
+  currentQty = p.defaultQty || 1;
+  qtyValue.textContent = currentQty;
+
+  swipeProgress.textContent = `Article ${sessionIndex + 1}/${sessionProducts.length}`;
+}
+
+const btnQtyMinus = document.getElementById("btnQtyMinus");
+const btnQtyPlus = document.getElementById("btnQtyPlus");
+const btnAdd = document.getElementById("btnAdd");
+const btnSkip = document.getElementById("btnSkip");
+
+btnQtyMinus.onclick = () => {
+  currentQty = Math.max(1, currentQty - 1);
+  qtyValue.textContent = currentQty;
+};
+
+btnQtyPlus.onclick = () => {
+  currentQty = Math.min(999, currentQty + 1);
+  qtyValue.textContent = currentQty;
+};
+
+btnAdd.onclick = () => {
+  const p = sessionProducts[sessionIndex];
+  currentList.push({
+    name: p.name,
+    rayon: p.rayon,
+    stockage: p.stockage,
+    qty: currentQty
+  });
+  sessionIndex++;
+  updateSwipeCard();
+};
+
+btnSkip.onclick = () => {
+  sessionIndex++;
+  updateSwipeCard();
+};
+
+/* Swipe gestures */
+let startX = null;
+let startY = null;
+const swipeCard = document.getElementById("swipeCard");
+
+swipeCard.addEventListener("touchstart", (e) => {
+  const t = e.changedTouches[0];
+  startX = t.screenX;
+  startY = t.screenY;
+}, { passive: true });
+
+swipeCard.addEventListener("touchend", (e) => {
+  const t = e.changedTouches[0];
+  const dx = t.screenX - startX;
+  const dy = t.screenY - startY;
+
+  if (Math.abs(dy) > Math.abs(dx)) return;
+
+  if (dx < -60) btnAdd.onclick();
+  if (dx > 60) btnSkip.onclick();
+}, { passive: true });
+
+/* RÉSULTAT + IMPRESSION */
+const resultListEl = document.getElementById("resultList");
+const printListContainer = document.getElementById("printListContainer");
+const sessionSummary = document.getElementById("sessionSummary");
+
+function renderResultList() {
+  resultListEl.innerHTML = "";
+  printListContainer.innerHTML = "";
+
+  if (currentList.length === 0) {
+    sessionSummary.style.display = "none";
+    return;
+  }
+
+  const grouped = {};
+  for (const it of currentList) {
+    const key = it.rayon + "||" + it.name;
+    if (!grouped[key]) grouped[key] = { ...it, qty: 0 };
+    grouped[key].qty += it.qty;
+  }
+
+  let arr = Object.values(grouped).sort(sortByRayonThenName);
+  let cur = null;
+
+  for (const it of arr) {
+    if (it.rayon !== cur) {
+      cur = it.rayon;
+      const h = `<div class="rayon-title">${rayonIcons[cur] || ''} ${cur}</div>`;
+      resultListEl.innerHTML += h;
+      printListContainer.innerHTML += h;
     }
+    const row = `<div class="result-row"><div>${it.name}</div><div>${it.qty}</div></div>`;
+    resultListEl.innerHTML += row;
+    printListContainer.innerHTML += row;
+  }
 
-    function compute(){
-      const total = parseInt($('#total').value||'0',10);
-      const rounding = $('#rounding').value;
-      const rows = getRows();
+  sessionSummary.style.display = "block";
+}
 
-      const weights = rows.map(r => Math.max(0, r.points * r.days));
-      const sumW = weights.reduce((a,b)=>a+b,0);
-      $('#sumW').textContent = sumW;
-
-      const fixeds = rows.map(r => Math.max(0, r.fixed|0));
-      const totalFixed = fixeds.reduce((a,b)=>a+b,0);
-
-      let distributed = 0;
-
-      if(sumW === 0){
-        // pas de pondération : on ne répartit que les montants fixes
-        rows.forEach((r,i) => {
-          r.el.querySelector('.weight').textContent = r.points * r.days;
-          r.el.querySelector('.amount').textContent = fixeds[i];
-          distributed += fixeds[i];
-        });
-        $('#sum€').textContent = distributed;
-        $('#rest').textContent = Math.max(0, total - distributed);
-        return;
-      }
-
-      const remaining = Math.max(0, total - totalFixed);
-      const rawShares = rows.map((r,i) => remaining * (weights[i] / sumW));
-
-      let propAmounts = [];
-      if (rounding === 'nearest'){
-        propAmounts = rawShares.map(v => Math.round(v));
-        let delta = remaining - propAmounts.reduce((a,b)=>a+b,0);
-        if(delta !== 0){
-          const order = rawShares.map((v,i)=>({i, frac:v - Math.round(v)}))
-                                 .sort((a,b)=> (delta>0) ? (b.frac - a.frac) : (a.frac - b.frac));
-          for(let k=0; delta!==0 && k<order.length; k++){
-            propAmounts[order[k].i] += (delta>0?1:-1);
-            delta += (delta>0?-1:1);
-          }
-        }
-      } else {
-        const floors = rawShares.map(v => Math.floor(v));
-        const used = floors.reduce((a,b)=>a+b,0);
-        let rest = remaining - used;
-        const order = rawShares.map((v,i)=>({i, frac: v - Math.floor(v)})).sort((a,b)=> b.frac - a.frac);
-        propAmounts = floors.slice();
-        for(let k=0; k<order.length && rest>0; k++){
-          propAmounts[order[k].i] += 1;
-          rest -= 1;
-        }
-      }
-
-      rows.forEach((r,i)=>{
-        const finalAmt = (propAmounts[i]|0) + (fixeds[i]|0);
-        r.el.querySelector('.amount').textContent = finalAmt;
-        r.el.querySelector('.weight').textContent = weights[i];
-        distributed += finalAmt;
-      });
-
-      $('#sum€').textContent = distributed;
-      $('#rest').textContent = Math.max(0, total - distributed);
-
-      autoSave();
-    }
-
-    function exportCSV(){
-      const rows = getRows();
-      const total = parseInt($('#total').value||'0',10);
-      const data = [['Nom','Points','Jours','Pondération','Fixe (€)','Montant (€)']];
-      const totalFixed = rows.reduce((s,r)=> s + Math.max(0, r.fixed|0), 0);
-      const totalDistribue = parseInt($('#sum€').textContent||'0',10);
-
-      rows.forEach(r=>{
-        data.push([
-          r.name,
-          r.points,
-          r.days,
-          (r.points*r.days),
-          r.fixed,
-          r.el.querySelector('.amount').textContent
-        ]);
-      });
-      data.push([]);
-      data.push(['Somme montants fixes', '', '', '', '', totalFixed]);
-      data.push(['Total réparti sur pondération', '', '', '', '', (totalDistribue - totalFixed)]);
-      data.push(['Total distribué', '', '', '', '', totalDistribue]);
-      data.push(['Total initial', '', '', '', '', total]);
-
-      const csv = data.map(row => row.map(cell => {
-        const s = String(cell ?? '');
-        return /[";,\n]/.test(s) ? '"'+ s.replace(/"/g,'""') +'"' : s;
-      }).join(';')).join('\n');
-
-      const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = 'repartition_pourboires.csv'; a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    function autoSave(){
-      const payload = {
-        total: parseInt($('#total').value||'0',10),
-        rounding: $('#rounding').value,
-        rows: getRows().map(r=>({name:r.name, points:r.points, days:r.days, fixed:r.fixed}))
-      };
-      try{ localStorage.setItem('tips-tool-v2-fixed', JSON.stringify(payload)); }catch(e){}
-    }
-
-    function saveManual(){ autoSave(); alert('Données sauvegardées dans ce navigateur.'); }
-
-    function loadFromStorage(){
-      try{
-        const raw = localStorage.getItem('tips-tool-v2-fixed');
-        if(!raw){ alert('Aucune sauvegarde trouvée.'); return; }
-        const payload = JSON.parse(raw);
-        $('#total').value = payload.total ?? 0;
-        $('#rounding').value = payload.rounding || 'floor';
-        tblBody.innerHTML = '';
-        (payload.rows||[]).forEach(addRow);
-        compute();
-      }catch(e){ alert('Impossible de charger la sauvegarde.'); }
-    }
-
-    function resetDefaults(){
-      $('#total').value = 0;
-      $('#rounding').value = 'floor';
-      tblBody.innerHTML = '';
-      DEFAULT_TEAM.forEach(addRow);
-      compute();
-    }
-
-    // Events
-    $('#addRow').addEventListener('click', ()=> addRow());
-    $('#resetDefaults').addEventListener('click', resetDefaults);
-    
-    
-    $('#save').addEventListener('click', saveManual);
-    $('#load').addEventListener('click', loadFromStorage);
-    $('#total').addEventListener('input', compute);
-    $('#rounding').addEventListener('change', compute);
-
-    // Init
-    resetDefaults();
-  </script>
+const printListBtn = document.getElementById("printList");
+printListBtn.onclick = () => {
+  window.print();
+};
+</script>
 </body>
 </html>
